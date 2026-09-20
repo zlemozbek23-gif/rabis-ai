@@ -1,22 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useWardrobe } from '../hooks/useWardrobe'
 import { useAuth } from '../hooks/useAuth'
-import { useAppStore } from '../store/useAppStore'
-import AIPhotoStudio from '../components/AIPhotoStudio'
-
 
 const CATEGORIES = ['Tümü', 'tops', 'bottoms', 'outerwear', 'shoes', 'dresses', 'accessories']
 const CATEGORY_LABELS = {
-  tops: 'Üst Giyim',
-  bottoms: 'Alt Giyim',
-  outerwear: 'Dış Giyim',
-  shoes: 'Ayakkabı',
-  dresses: 'Elbise',
-  accessories: 'Aksesuar',
+  tops: '👚 Üst Giyim',
+  bottoms: '👖 Alt Giyim',
+  outerwear: '🧥 Dış Giyim',
+  shoes: '👟 Ayakkabı',
+  dresses: '👗 Elbise',
+  accessories: '💍 Takı & Aksesuar',
 }
 
-function ClothingCard({ item, onDelete, onTryOn }) {
+function ClothingCard({ item, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   return (
@@ -26,13 +23,15 @@ function ClothingCard({ item, onDelete, onTryOn }) {
         padding: 0,
         overflow: 'hidden',
         position: 'relative',
-        borderRadius: 20,
+        borderRadius: 22,
         border: '1px solid rgba(255, 255, 255, 0.08)',
-        background: 'rgba(18, 18, 24, 0.65)',
+        background: 'rgba(16, 15, 22, 0.75)',
         boxShadow: '0 12px 28px -8px rgba(0,0,0,0.7)',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', overflow: 'hidden', background: '#0a0a10' }}>
         <img
           src={item.imageUrl}
           alt={item.name}
@@ -42,41 +41,46 @@ function ClothingCard({ item, onDelete, onTryOn }) {
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to top, rgba(8, 8, 12, 0.95) 0%, rgba(8, 8, 12, 0.2) 45%, transparent 100%)',
+          background: 'linear-gradient(to top, rgba(8, 8, 12, 0.92) 0%, rgba(8, 8, 12, 0.1) 50%, transparent 100%)',
         }} />
 
-        <div style={{ position: 'absolute', top: 10, left: 10 }}>
+        {/* Category badge */}
+        <div style={{ position: 'absolute', top: 8, left: 8 }}>
           <span className="badge" style={{
             fontSize: 9,
-            padding: '3px 8px',
-            background: 'rgba(10, 10, 15, 0.75)',
+            padding: '4px 8px',
+            background: 'rgba(10, 10, 15, 0.85)',
             backdropFilter: 'blur(8px)',
-            borderColor: 'rgba(255, 255, 255, 0.12)',
+            borderColor: 'rgba(255, 255, 255, 0.15)',
             color: '#f1f5f9',
+            fontWeight: 600,
           }}>
             {CATEGORY_LABELS[item.category] || item.category}
           </span>
         </div>
 
+        {/* Delete button */}
         {!confirmDelete ? (
           <button
             onClick={() => setConfirmDelete(true)}
+            title="Parçayı Sil"
             style={{
               position: 'absolute',
-              top: 10,
-              right: 10,
-              background: 'rgba(10, 10, 15, 0.7)',
+              top: 8,
+              right: 8,
+              background: 'rgba(10, 10, 15, 0.75)',
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: 'rgba(255, 255, 255, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: 'rgba(255, 255, 255, 0.65)',
               borderRadius: '50%',
-              width: 26,
-              height: 26,
+              width: 28,
+              height: 28,
               cursor: 'pointer',
-              fontSize: 13,
+              fontSize: 14,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'all 0.2s',
             }}
           >
             ×
@@ -85,28 +89,28 @@ function ClothingCard({ item, onDelete, onTryOn }) {
           <div style={{
             position: 'absolute',
             inset: 0,
-            background: 'rgba(6, 6, 10, 0.92)',
+            background: 'rgba(6, 6, 10, 0.94)',
             backdropFilter: 'blur(12px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 16,
-            gap: 10,
+            padding: 12,
+            gap: 8,
             zIndex: 10,
           }}>
-            <p style={{ fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>Parçayı kaldır?</p>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <p style={{ fontSize: 11, color: '#f8fafc', fontWeight: 600, margin: 0 }}>Silinsin mi?</p>
+            <div style={{ display: 'flex', gap: 6 }}>
               <button
                 className="btn btn-danger"
-                style={{ padding: '6px 12px', fontSize: 11, borderRadius: 10 }}
+                style={{ padding: '5px 10px', fontSize: 11, borderRadius: 10 }}
                 onClick={() => onDelete(item)}
               >
                 Sil
               </button>
               <button
                 className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: 11, borderRadius: 10 }}
+                style={{ padding: '5px 10px', fontSize: 11, borderRadius: 10 }}
                 onClick={() => setConfirmDelete(false)}
               >
                 Vazgeç
@@ -121,13 +125,13 @@ function ClothingCard({ item, onDelete, onTryOn }) {
           bottom: 0,
           left: 0,
           right: 0,
-          padding: '12px 14px',
+          padding: '10px 12px',
         }}>
           <h4 style={{
             fontSize: 13,
             fontWeight: 700,
             color: '#ffffff',
-            marginBottom: 4,
+            margin: '0 0 2px',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -141,24 +145,7 @@ function ClothingCard({ item, onDelete, onTryOn }) {
             fontSize: 11,
             color: 'var(--text-secondary)'
           }}>
-            <span>{item.color}</span>
-            {onTryOn && (
-              <button
-                onClick={() => onTryOn(item)}
-                style={{
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(230, 198, 135, 0.2) 100%)',
-                  border: '1px solid rgba(230, 198, 135, 0.3)',
-                  color: 'var(--accent-gold)',
-                  borderRadius: 8,
-                  padding: '3px 8px',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Giy ✨
-              </button>
-            )}
+            <span>{item.color || 'Özel'}</span>
           </div>
         </div>
       </div>
@@ -209,13 +196,13 @@ function UploadOverlay({ onClose, onUploadFiles, uploading, uploadProgress }) {
 
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <span className="badge badge-gold" style={{ marginBottom: 8 }}>
-            TOPLU KIYAFET YÜKLEME
+            TOPLU DOLAP YÜKLEME
           </span>
           <h3 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px', marginTop: 4 }}>
             Gardırobuna Parçalar Ekle
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>
-            Galeriden veya kameradan <strong>100 parçaya kadar</strong> tek seferde seçebilirsin
+            Kıyafet, takı, çanta ve ayakkabılarından <strong>100 parçaya kadar</strong> tek seferde seç
           </p>
         </div>
 
@@ -263,7 +250,7 @@ function UploadOverlay({ onClose, onUploadFiles, uploading, uploadProgress }) {
             {isDragActive ? 'Bırakın...' : 'Fotoğrafları Buraya Sürükle veya Çoklu Seç'}
           </p>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
-            Maksimum 100 fotoğraf
+            Maksimum 100 fotoğraf (Kıyafet, Ayakkabı, Takı, Çanta)
           </span>
         </div>
 
@@ -329,29 +316,9 @@ function UploadOverlay({ onClose, onUploadFiles, uploading, uploadProgress }) {
 export default function WardrobePage() {
   const { wardrobe, loading, uploading, uploadProgress, addClothingItems, deleteClothingItem } = useWardrobe()
   const { user } = useAuth()
-  const { avatarConfig, profile, selectedOutfitForStudio, setSelectedOutfitForStudio } = useAppStore()
-  const [viewMode, setViewMode] = useState('studio') // 'studio' | 'catalog'
   const [activeCategory, setActiveCategory] = useState('Tümü')
   const [showUpload, setShowUpload] = useState(false)
   const [uploadError, setUploadError] = useState('')
-
-  // Current Outfit
-  const [currentOutfit, setCurrentOutfit] = useState(() => {
-    if (selectedOutfitForStudio) return selectedOutfitForStudio
-    const top    = wardrobe.find((i) => i.category === 'tops' || i.category === 'outerwear') || wardrobe[0]
-    const bottom = wardrobe.find((i) => i.category === 'bottoms') || wardrobe[1] || wardrobe[0]
-    const shoes  = wardrobe.find((i) => i.category === 'shoes')   || wardrobe[2]
-    return { top, bottom, shoes }
-  })
-
-  // When user clicks "Bu Kombini Üzerimde Gör" from Chat, automatically switch to studio with that outfit
-  useEffect(() => {
-    if (selectedOutfitForStudio) {
-      setCurrentOutfit(selectedOutfitForStudio)
-      setViewMode('studio')
-      setSelectedOutfitForStudio(null)
-    }
-  }, [selectedOutfitForStudio, setSelectedOutfitForStudio])
 
   const filtered = activeCategory === 'Tümü'
     ? wardrobe
@@ -367,38 +334,18 @@ export default function WardrobePage() {
     }
   }
 
-  const handleShuffleOutfit = () => {
-    if (wardrobe.length >= 2) {
-      const tops      = wardrobe.filter((i) => i.category === 'tops' || i.category === 'outerwear')
-      const bottoms   = wardrobe.filter((i) => i.category === 'bottoms')
-      const shoesList = wardrobe.filter((i) => i.category === 'shoes')
-      setCurrentOutfit({
-        top:    tops[Math.floor(Math.random() * tops.length)]           || wardrobe[0],
-        bottom: bottoms[Math.floor(Math.random() * bottoms.length)]     || wardrobe[1],
-        shoes:  shoesList[Math.floor(Math.random() * shoesList.length)] || wardrobe[2],
-      })
-    }
-  }
-
-  const handleTryOnSingle = (item) => {
-    setViewMode('studio')
-    if      (item.category === 'tops' || item.category === 'outerwear') setCurrentOutfit((prev) => ({ ...prev, top: item }))
-    else if (item.category === 'bottoms')                                setCurrentOutfit((prev) => ({ ...prev, bottom: item }))
-    else if (item.category === 'shoes')                                  setCurrentOutfit((prev) => ({ ...prev, shoes: item }))
-  }
-
   return (
     <div style={{
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
       paddingTop: 'var(--safe-top)',
-      paddingBottom: 85,
+      paddingBottom: 95,
       overflow: 'hidden',
     }}>
       {/* Top Header */}
       <div style={{
-        padding: '14px 20px 10px',
+        padding: '16px 20px 12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -407,161 +354,114 @@ export default function WardrobePage() {
       }}>
         <div>
           <span className="font-editorial" style={{
-            fontSize: 10, fontWeight: 700, color: 'var(--accent-gold)', display: 'block',
+            fontSize: 11, fontWeight: 700, color: 'var(--accent-gold)', display: 'block', letterSpacing: 1,
           }}>
-            AI PHOTO STUDIO
+            RABİŞ'İN DOLABI
           </span>
-          <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.3px', margin: 0 }}>
-            {viewMode === 'studio' ? 'Fotoğraf Stüdyosu' : 'Gardırop Kataloğu'}
+          <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.4px', margin: 0 }}>
+            Gardırobum
           </h1>
         </div>
 
-        {/* View Switcher */}
-        <div style={{
-          display: 'flex', gap: 4,
-          background: 'rgba(20,20,28,0.8)', backdropFilter: 'blur(16px)',
-          padding: 3, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)',
-        }}>
-          {[
-            { key: 'studio',  label: '✨ Stüdyo' },
-            { key: 'catalog', label: `📋 Liste (${wardrobe.length})` },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setViewMode(key)}
-              style={{
-                padding: '6px 11px', borderRadius: 11, border: 'none',
-                cursor: 'pointer', fontWeight: 700, fontSize: 11,
-                background: viewMode === key
-                  ? 'linear-gradient(135deg,rgba(139,92,246,0.4) 0%,rgba(230,198,135,0.2) 100%)'
-                  : 'transparent',
-                color: viewMode === key ? '#fff' : 'var(--text-secondary)',
-                transition: 'all 0.2s',
-              }}
-            >{label}</button>
-          ))}
-        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowUpload(true)}
+          style={{
+            padding: '10px 16px',
+            fontSize: 12,
+            borderRadius: 14,
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+            boxShadow: '0 6px 20px rgba(124, 58, 237, 0.3)',
+          }}
+        >
+          + Parça Ekle
+        </button>
       </div>
 
-      {/* Outfit Quick Selector (visible in studio mode) */}
-      {viewMode === 'studio' && (
-        <div style={{
-          flexShrink: 0,
-          padding: '0 16px 8px',
-          display: 'flex',
-          gap: 8,
-          alignItems: 'center',
-        }}>
-          {/* Outfit thumbnails */}
-          <div style={{ display: 'flex', gap: 6, flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
-            {[currentOutfit?.top, currentOutfit?.bottom, currentOutfit?.shoes].filter(Boolean).map((item, i) => (
-              <div key={i} style={{
-                flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-              }}>
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  style={{
-                    width: 44, height: 44, borderRadius: 10, objectFit: 'cover',
-                    border: '1px solid rgba(212,175,55,0.3)',
-                  }}
-                />
-                <span style={{ fontSize: 8, color: 'var(--text-secondary)', maxWidth: 44, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {item.name}
-                </span>
-              </div>
-            ))}
-          </div>
-          {/* Shuffle + Add */}
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            <button onClick={handleShuffleOutfit} title="Kombin Karıştır"
+      {/* Category Filter Pills */}
+      <div style={{
+        padding: '0 20px 12px',
+        display: 'flex',
+        gap: 8,
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
+        flexShrink: 0,
+      }}>
+        {CATEGORIES.map((cat) => {
+          const count = cat === 'Tümü'
+            ? wardrobe.length
+            : wardrobe.filter((i) => i.category === cat).length
+
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
               style={{
-                padding: '8px 10px', borderRadius: 11, border: '1px solid rgba(255,255,255,0.12)',
-                background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 14, cursor: 'pointer',
-              }}>🔀</button>
-            <button onClick={() => setShowUpload(true)}
-              className="btn btn-primary"
-              style={{ padding: '8px 12px', fontSize: 11, borderRadius: 11 }}>
-              + Ekle
+                flexShrink: 0,
+                padding: '7px 14px',
+                borderRadius: 9999,
+                border: activeCategory === cat ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+                background: activeCategory === cat
+                  ? 'linear-gradient(135deg, rgba(124, 58, 237, 0.35) 0%, rgba(217, 180, 120, 0.2) 100%)'
+                  : 'rgba(255, 255, 255, 0.04)',
+                color: activeCategory === cat ? '#ffffff' : 'var(--text-secondary)',
+                transition: 'all 0.2s',
+              }}
+            >
+              {cat === 'Tümü' ? `Tümü (${count})` : `${CATEGORY_LABELS[cat] || cat} (${count})`}
             </button>
-          </div>
-        </div>
-      )}
+          )
+        })}
+      </div>
 
-      {/* MAIN CONTENT */}
-      {viewMode === 'studio' ? (
-        <AIPhotoStudio outfit={currentOutfit} />
-      ) : (
-        /* Catalog 2D Grid Mode */
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 20px 20px' }}>
-          {/* Category Filter */}
-          <div style={{
-            display: 'flex',
-            gap: 8,
-            overflowX: 'auto',
-            paddingBottom: 12,
-            scrollbarWidth: 'none',
-          }}>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                style={{
-                  flexShrink: 0,
-                  padding: '7px 14px',
-                  borderRadius: 9999,
-                  border: activeCategory === cat ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  background: activeCategory === cat
-                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(230, 198, 135, 0.15) 100%)'
-                    : 'rgba(255, 255, 255, 0.04)',
-                  color: activeCategory === cat ? '#ffffff' : 'var(--text-secondary)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {CATEGORY_LABELS[cat] || cat}
-              </button>
-            ))}
+      {/* Main Wardrobe Grid */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
+            <div className="spinner" style={{ width: 32, height: 32 }} />
           </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        ) : filtered.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '50px 20px', marginTop: 20 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>👗</div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 6 }}>
+              {activeCategory === 'Tümü' ? 'Dolabın henüz boş' : 'Bu kategoride parça yok'}
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, maxWidth: 300, margin: '0 auto 20px' }}>
+              Kıyafet, takı, çanta ve ayakkabılarının fotoğrafını çekip ekle; yapay zeka senin için bunlardan günlük kombinler yapsın.
+            </p>
             <button
               className="btn btn-primary"
               onClick={() => setShowUpload(true)}
-              style={{ padding: '8px 14px', fontSize: 12, borderRadius: 12 }}
+              style={{
+                padding: '12px 24px',
+                fontSize: 13,
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+              }}
             >
-              + Yeni Kıyafet Ekle
+              + Parça Ekle (100'e kadar)
             </button>
           </div>
-
-          {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
-              <div className="spinner" style={{ width: 32, height: 32 }} />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Bu kategoride kıyafet yok.</p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 12,
-            }}>
-              {filtered.map((item) => (
-                <ClothingCard
-                  key={item.id}
-                  item={item}
-                  onDelete={deleteClothingItem}
-                  onTryOn={handleTryOnSingle}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 12,
+          }}>
+            {filtered.map((item) => (
+              <ClothingCard
+                key={item.id}
+                item={item}
+                onDelete={deleteClothingItem}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {uploadError && (
         <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', margin: '4px 0' }}>

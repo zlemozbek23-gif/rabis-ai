@@ -233,11 +233,11 @@ export default function SavedPage() {
                 padding: '13px',
                 fontSize: 13,
                 fontWeight: 700,
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #d4af37 100%)',
-                boxShadow: '0 8px 24px rgba(139, 92, 246, 0.35)',
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+                boxShadow: '0 8px 24px rgba(124, 58, 237, 0.35)',
               }}
             >
-              ✨ 3D Avatarı & Gardırobu Yeniden Yapılandır
+              ✨ Profilimi & Dolabımı Yeniden Yapılandır
             </button>
 
             {analyzingFace && (

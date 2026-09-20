@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom'
 
 const tabs = [
-  { to: '/chat', icon: '✨', label: 'AI Stilist' },
-  { to: '/wardrobe', icon: '📸', label: 'Ön & Arka Stüdyo' },
+  { to: '/chat', icon: '✨', label: 'Stilist Sohbet' },
+  { to: '/wardrobe', icon: '👗', label: 'Gardırobum' },
+  { to: '/saved', icon: '❤️', label: 'Kayıtlılar & Profil' },
 ]
 
 
