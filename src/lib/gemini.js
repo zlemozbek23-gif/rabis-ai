@@ -51,7 +51,10 @@ export async function transcribeAudio(audioBlob) {
 
   const mime = audioBlob.type || 'audio/webm'
 
-  const prompt = `Bu ses kaydını dinle ve kullanıcının Türkçe olarak ne söylediğini kelimesi kelimesine metne dök.
+  const prompt = `Sen profesyonel bir Türkçe ses transkripsiyon yapay zekasısın.
+Bu ses kaydını son derece dikkatle dinle. Kullanıcının Türkçe olarak söylediği her bir kelimeyi eksiksiz ve tam doğrulukla metne dönüştür.
+Özellikle moda, giyim, kombin, hava durumu, stil istekleri ve günlük konuşma kelimelerini (örn: "kombin", "trençkot", "oversize", "jean", "kazak", "ayakkabı", "sneaker", "Ankara", "renkli", "şıklık", "cıvıl cıvıl" vb.) doğru algıla.
+
 ÖNEMLİ KURALLAR:
 1. SADECE konuşulan Türkçe metni yaz.
 2. Selamlama, tırnak işareti, zaman damgası, açıklama veya ek yorum ASLA yapma.

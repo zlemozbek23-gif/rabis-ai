@@ -304,6 +304,9 @@ export default function ChatPage() {
     isListening,
     isTranscribing,
     toggleListening,
+    duration,
+    formattedDuration,
+    audioLevels,
     error: speechError,
     isSupported: isSpeechSupported,
   } = useSpeechRecognition({
@@ -742,41 +745,109 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* ═══════ VOICE LISTENING BANNER ═══════ */}
+      {/* ═══════ GOOGLE AI STYLE VOICE WAVEFORM & RECORDER ═══════ */}
       {isListening && (
         <div
           className="slide-up"
           style={{
-            margin: '0 18px 10px',
-            padding: '12px 18px',
-            borderRadius: 18,
-            background: 'linear-gradient(135deg, rgba(251, 113, 133, 0.12) 0%, rgba(167, 139, 250, 0.12) 100%)',
-            border: '1px solid rgba(251, 113, 133, 0.25)',
+            margin: '0 16px 12px',
+            padding: '16px 18px',
+            borderRadius: 24,
+            background: 'linear-gradient(145deg, rgba(26, 22, 44, 0.96) 0%, rgba(14, 12, 24, 0.98) 100%)',
+            border: '1.5px solid rgba(167, 139, 250, 0.35)',
+            boxShadow: '0 16px 40px -10px rgba(0, 0, 0, 0.8), 0 0 25px rgba(124, 58, 237, 0.20)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
+            gap: 12,
+            backdropFilter: 'blur(24px)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div className="glow-pulse" style={{
-              width: 10, height: 10, borderRadius: '50%',
-              background: '#fb7185',
-            }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#fb7185' }}>
-              Seni dinliyorum, Rabiş...
-            </span>
+          {/* Top row: Status & Timer & Waveform */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            {/* Left: Recording indicator & Duration timer */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                className="glow-pulse"
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: '#fb7185',
+                  boxShadow: '0 0 10px #fb7185',
+                }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#fb7185', letterSpacing: 0.5 }}>
+                {formattedDuration}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                • Dinleniyor
+              </span>
+            </div>
+
+            {/* Center: Live Bouncing Audio Waveform Bars (Google AI style) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 32, padding: '0 8px' }}>
+              {audioLevels.map((lvl, i) => {
+                const barHeight = Math.max(8, Math.min(30, Math.round(lvl * 30)))
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      width: 4,
+                      height: barHeight,
+                      borderRadius: 3,
+                      background: i % 2 === 0
+                        ? 'linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%)'
+                        : 'linear-gradient(180deg, #d9b478 0%, #e8a87c 100%)',
+                      boxShadow: `0 0 8px ${i % 2 === 0 ? 'rgba(167, 139, 250, 0.5)' : 'rgba(217, 180, 120, 0.5)'}`,
+                      transition: 'height 0.08s ease',
+                    }}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Right: Finish Button */}
+            <button
+              onClick={toggleListening}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+                color: '#fff',
+                border: 'none',
+                fontSize: 12,
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: '0 4px 16px rgba(124, 58, 237, 0.4)',
+              }}
+            >
+              <span>✓</span>
+              <span>Bitir</span>
+            </button>
           </div>
-          <button
-            onClick={toggleListening}
+
+          {/* Bottom row: Live text preview */}
+          <div
             style={{
-              padding: '6px 14px', borderRadius: 10,
-              background: 'rgba(251, 113, 133, 0.20)',
-              color: '#fb7185', border: '1px solid rgba(251, 113, 133, 0.30)',
-              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              padding: '10px 14px',
+              borderRadius: 14,
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              fontSize: 13,
+              color: input ? '#fff' : 'rgba(255, 255, 255, 0.45)',
+              fontStyle: input ? 'normal' : 'italic',
+              minHeight: 38,
+              maxHeight: 70,
+              overflowY: 'auto',
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            Bitir
-          </button>
+            {input || 'Konuşurken ses dalgalarının hareket ettiğini görebilirsin...'}
+          </div>
         </div>
       )}
 
