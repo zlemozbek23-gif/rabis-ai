@@ -2,7 +2,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
 
 export default function LoginPage() {
-  const { signInWithGoogle, loginAsGuest, isFirebaseConfigured } = useAuth()
+  const { signInWithGoogle, loginAsGuest, isSupabaseConfigured } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
           marginBottom: 8,
           letterSpacing: '-0.5px',
         }}>
-          StyleAI
+          Rabiş AI
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.5 }}>
           Yapay zeka destekli kişisel<br />stil ve kombin asistanın

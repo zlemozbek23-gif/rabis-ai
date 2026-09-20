@@ -4,6 +4,8 @@ import { useAppStore } from '../store/useAppStore'
 import { useWardrobe } from '../hooks/useWardrobe'
 import { useWeather } from '../hooks/useWeather'
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
+import { useAuth } from '../hooks/useAuth'
+import { insertSavedOutfit } from '../lib/supabaseSync'
 
 const QUICK_PROMPTS = [
   { emoji: '🌸', text: 'Ankara\'dayım, bugün renkli, cıvıl cıvıl, tatlı, minnoş bir kombin istiyorum' },
@@ -283,6 +285,7 @@ function ChatBubble({ message, onAskAlternative, onSaveOutfit, savedOutfitTitles
 export default function ChatPage() {
   const { wardrobe, addClothingItem, deleteClothingItem } = useWardrobe()
   const { weather } = useWeather()
+  const { user } = useAuth()
   const {
     chatMessages, addChatMessage, clearChat,
     profile, setProfile,
@@ -356,13 +359,21 @@ export default function ChatPage() {
     sendMessage(`"${currentTitle}" kombinini çok beğendim ama dolabımdaki diğer alternatif parçalarla farklı bir versiyonunu daha çıkarır mısın?`)
   }
 
-  const handleSaveOutfit = (outfitData) => {
+  const handleSaveOutfit = async (outfitData) => {
     if (savedOutfits?.some((o) => o.outfitTitle === outfitData.outfitTitle)) return
-    addSavedOutfit({
+    const outfit = {
       id: 'saved-' + Date.now(),
+      title: outfitData.outfitTitle,
+      description: outfitData.stylistMessage || outfitData.stylingNotes || '',
+      items: outfitData.outfit || [],
+      weather: outfitData.weather || null,
       ...outfitData,
       createdAt: new Date().toISOString(),
-    })
+    }
+    addSavedOutfit(outfit)
+    if (user?.uid && !user?.isGuest) {
+      await insertSavedOutfit(user.uid, outfit).catch(console.warn)
+    }
   }
 
   const handleClothingPhotoUpload = async (e) => {

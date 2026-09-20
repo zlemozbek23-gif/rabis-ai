@@ -1,65 +1,111 @@
 import { useState, useEffect } from 'react'
-import { auth, isFirebaseConfigured } from '../lib/firebase'
-import {
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-} from 'firebase/auth'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { useAppStore } from '../store/useAppStore'
+import {
+  loadProfile,
+  loadWardrobe,
+  loadSavedOutfits,
+  upsertProfile,
+} from '../lib/supabaseSync'
 
 export function useAuth() {
   const [loading, setLoading] = useState(true)
-  const { user, setUser } = useAppStore()
+  const { user, setUser, setProfile, setWardrobe, setSavedOutfits, setOnboardingComplete } = useAppStore()
+
+  // Load all cloud data after login
+  const syncFromCloud = async (supabaseUser) => {
+    try {
+      const [profileData, wardrobeData, outfitsData] = await Promise.all([
+        loadProfile(supabaseUser.id),
+        loadWardrobe(supabaseUser.id),
+        loadSavedOutfits(supabaseUser.id),
+      ])
+
+      if (profileData) {
+        setProfile({
+          userPhotoUrl: profileData.user_photo_url || '',
+          bodyAnalysis: profileData.body_analysis || null,
+          facePhotoUrl: profileData.face_photo_url || '',
+          faceAnalysis: profileData.face_analysis || null,
+        })
+        if (profileData.onboarding_complete) {
+          setOnboardingComplete(true)
+        }
+      }
+
+      if (wardrobeData.length > 0) {
+        setWardrobe(wardrobeData)
+      }
+
+      if (outfitsData.length > 0) {
+        setSavedOutfits(outfitsData)
+      }
+    } catch (err) {
+      console.warn('Cloud sync error:', err)
+    }
+  }
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!isSupabaseConfigured || !supabase) {
+      // No Supabase: use localStorage persist (guest mode)
       setLoading(false)
       return
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      // If user was signed in via guest mode, keep it unless firebaseUser exists
-      if (firebaseUser) {
-        setUser(firebaseUser)
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const u = session.user
+        setUser({ uid: u.id, displayName: u.user_metadata?.full_name || 'Kullanıcı', email: u.email, isGuest: false })
+        syncFromCloud(u).finally(() => setLoading(false))
+      } else {
+        setLoading(false)
       }
-      setLoading(false)
     })
-    return unsubscribe
-  }, [setUser])
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const u = session.user
+        setUser({ uid: u.id, displayName: u.user_metadata?.full_name || 'Kullanıcı', email: u.email, isGuest: false })
+        if (event === 'SIGNED_IN') {
+          await syncFromCloud(u)
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setOnboardingComplete(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const signInWithGoogle = async () => {
-    if (!isFirebaseConfigured || !auth) {
-      throw new Error('Firebase anahtarları henüz .env dosyasına eklenmemiş. Lütfen "Misafir Olarak Devam Et" seçeneğini kullanın veya Firebase ayarlarınızı tamamlayın.')
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Supabase henüz yapılandırılmamış.')
     }
-    const provider = new GoogleAuthProvider()
-    try {
-      await signInWithPopup(auth, provider)
-    } catch (err) {
-      console.error('Google sign-in error:', err)
-      throw err
-    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
+    if (error) throw error
   }
 
   const loginAsGuest = () => {
-    const guestUser = {
+    setUser({
       uid: 'guest_' + Math.random().toString(36).substring(2, 9),
-      displayName: 'Stil Sahibi (Misafir)',
-      email: 'misafir@styleai.app',
+      displayName: 'Misafir',
+      email: '',
       isGuest: true,
-    }
-    setUser(guestUser)
+    })
   }
 
   const logout = async () => {
-    if (isFirebaseConfigured && auth) {
-      try {
-        await signOut(auth)
-      } catch {
-        // ignore
-      }
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut().catch(() => {})
     }
     setUser(null)
+    setOnboardingComplete(false)
   }
 
   return {
@@ -68,6 +114,8 @@ export function useAuth() {
     signInWithGoogle,
     loginAsGuest,
     logout,
-    isFirebaseConfigured,
+    isSupabaseConfigured,
+    // Keep legacy name for compatibility
+    isFirebaseConfigured: isSupabaseConfigured,
   }
 }

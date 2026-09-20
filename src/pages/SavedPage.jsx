@@ -5,9 +5,10 @@ import { getGeminiApiKey, setGeminiApiKey, analyzeFacePhoto, fileToBase64 } from
 import { getOwmApiKey, setOwmApiKey } from '../lib/weather'
 import { getOpenAIKey, setOpenAIKey } from '../lib/openai'
 import { getTogetherKey, setTogetherKey } from '../lib/together'
+import { deleteSavedOutfitDB, insertSavedOutfit } from '../lib/supabaseSync'
 
 export default function SavedPage() {
-  const { savedOutfits, removeSavedOutfit, profile, setProfile, setOnboardingComplete } = useAppStore()
+  const { savedOutfits, removeSavedOutfit, addSavedOutfit, profile, setProfile, setOnboardingComplete } = useAppStore()
   const { logout, user } = useAuth()
   const [activeTab, setActiveTab] = useState('profile') // 'profile' | 'outfits' | 'settings'
 
@@ -360,7 +361,12 @@ export default function SavedPage() {
                         </span>
                       </div>
                       <button
-                        onClick={() => removeSavedOutfit(outfit.id)}
+                        onClick={async () => {
+                          if (user?.uid && !user?.isGuest) {
+                            await deleteSavedOutfitDB(outfit.id).catch(console.warn)
+                          }
+                          removeSavedOutfit(outfit.id)
+                        }}
                         style={{
                           background: 'none',
                           border: 'none',

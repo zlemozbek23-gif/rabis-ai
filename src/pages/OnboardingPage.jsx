@@ -1,12 +1,15 @@
 import { useState, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import { analyzeFaceAndBodyPhoto, analyzeClothingItem, fileToBase64 } from '../lib/gemini'
+import { analyzeFaceAndBodyPhoto, analyzeClothingItem } from '../lib/gemini'
+import { uploadProfilePhoto, uploadWardrobePhoto } from '../lib/storageUpload'
+import { upsertProfile, insertWardrobeItem } from '../lib/supabaseSync'
 
 export default function OnboardingPage() {
   const {
     profile, setProfile,
     wardrobe, addWardrobeItem,
     setOnboardingComplete,
+    user,
   } = useAppStore()
 
   const [step, setStep] = useState(1)
@@ -23,13 +26,12 @@ export default function OnboardingPage() {
     if (!file) return
     setAnalyzingPhoto(true)
     try {
-      const b64 = await fileToBase64(file)
-      const dataUrl = `data:${file.type || 'image/jpeg'};base64,${b64}`
-      setPhotoPreview(dataUrl)
+      const imageUrl = await uploadProfilePhoto(user?.uid || 'guest', file)
+      setPhotoPreview(imageUrl)
       const analysis = await analyzeFaceAndBodyPhoto(file)
       setAnalysisResult(analysis)
-      setProfile({
-        userPhotoUrl: dataUrl,
+      const profileUpdate = {
+        userPhotoUrl: imageUrl,
         bodyAnalysis: analysis,
         faceAnalysis: {
           faceShape: analysis.faceShape || 'oval',
@@ -38,7 +40,15 @@ export default function OnboardingPage() {
           colorPalette: analysis.bestColors || [],
           summary: analysis.summary || '',
         },
-      })
+      }
+      setProfile(profileUpdate)
+      if (user?.uid && !user?.isGuest) {
+        await upsertProfile(user.uid, {
+          user_photo_url: imageUrl,
+          body_analysis: analysis,
+          face_analysis: profileUpdate.faceAnalysis,
+        }).catch(console.warn)
+      }
     } catch (err) {
       console.error('Photo analysis error:', err)
     } finally {
@@ -51,8 +61,8 @@ export default function OnboardingPage() {
     if (!file) return
     setUploadingCloth(true)
     try {
-      const b64 = await fileToBase64(file)
-      const imageUrl = `data:${file.type || 'image/jpeg'};base64,${b64}`
+      const itemId = 'item_' + Date.now()
+      const imageUrl = await uploadWardrobePhoto(user?.uid || 'guest', itemId, file)
       let itemAnalysis = {}
       try {
         itemAnalysis = await analyzeClothingItem(file)
@@ -64,10 +74,13 @@ export default function OnboardingPage() {
         }
       }
       const newItem = {
-        id: 'user-item-' + Date.now(),
+        id: itemId,
         ...itemAnalysis,
         imageUrl,
         createdAt: new Date().toISOString(),
+      }
+      if (user?.uid && !user?.isGuest) {
+        await insertWardrobeItem(user.uid, newItem).catch(console.warn)
       }
       addWardrobeItem(newItem)
       setAddedClothesCount((c) => c + 1)
@@ -78,6 +91,7 @@ export default function OnboardingPage() {
       if (clothInputRef.current) clothInputRef.current.value = ''
     }
   }
+
 
   return (
     <div
@@ -552,7 +566,12 @@ export default function OnboardingPage() {
 
             {/* Start Chatting Button */}
             <button
-              onClick={() => setOnboardingComplete(true)}
+              onClick={async () => {
+                if (user?.uid && !user?.isGuest) {
+                  await upsertProfile(user.uid, { onboarding_complete: true }).catch(console.warn)
+                }
+                setOnboardingComplete(true)
+              }}
               style={{
                 width: '100%',
                 padding: '16px 24px',
