@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { idbStorage } from '../lib/idbStorage'
 
 const DEFAULT_AVATAR = {
   name: 'Rabiş',
@@ -102,6 +103,7 @@ export const useAppStore = create(
     {
       name: 'styleai-master-storage',
       version: 2,
+      storage: createJSONStorage(() => idbStorage),
       migrate: (persistedState) => {
         if (persistedState?.wardrobe) {
           persistedState.wardrobe = persistedState.wardrobe.filter(

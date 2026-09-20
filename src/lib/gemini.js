@@ -109,7 +109,7 @@ export async function analyzeClothingItem(file) {
 }`
 
   try {
-    const response = await ai.models.generateContent({
+    const apiPromise = ai.models.generateContent({
       model: 'gemini-3.5-flash-lite',
       contents: [
         {
@@ -121,6 +121,12 @@ export async function analyzeClothingItem(file) {
         { text: prompt },
       ],
     })
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Clothing analysis timeout')), 4000)
+    )
+
+    const response = await Promise.race([apiPromise, timeoutPromise])
 
     const text = response.text?.trim() || ''
     const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -237,10 +243,16 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
 }`
 
   try {
-    const response = await ai.models.generateContent({
+    const apiPromise = ai.models.generateContent({
       model: 'gemini-3.5-flash-lite',
       contents: [{ text: prompt }],
     })
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Stylist consultation timeout')), 8000)
+    )
+
+    const response = await Promise.race([apiPromise, timeoutPromise])
 
     const text = response.text?.trim() || ''
     const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -251,8 +263,8 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
       parsed = JSON.parse(text)
     }
 
-    // If intent is chat, return conversation only without outfit cards
-    if (parsed.intent === 'chat' || (!parsed.selectedTopId && !parsed.selectedBottomId)) {
+    // If intent is explicitly chat, or wardrobe is empty
+    if (parsed.intent === 'chat' || wardrobe.length === 0) {
       return {
         intent: 'chat',
         stylistMessage: parsed.stylistMessage || 'Selam Rabiş! Günün nasıl geçiyor, nasıl yardımcı olabilirim?',
@@ -264,8 +276,8 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
     }
 
     // Resolve actual item objects from wardrobe
-    const selectedTop = wardrobe.find((i) => i.id === parsed.selectedTopId) || wardrobe.find((i) => i.category === 'tops') || null
-    const selectedBottom = wardrobe.find((i) => i.id === parsed.selectedBottomId) || wardrobe.find((i) => i.category === 'bottoms') || null
+    const selectedTop = wardrobe.find((i) => i.id === parsed.selectedTopId) || wardrobe.find((i) => i.category === 'tops' || i.category === 'dresses') || wardrobe[0] || null
+    const selectedBottom = wardrobe.find((i) => i.id === parsed.selectedBottomId) || wardrobe.find((i) => i.category === 'bottoms') || (wardrobe.length > 1 ? wardrobe[1] : null)
     const selectedShoes = wardrobe.find((i) => i.id === parsed.selectedShoesId) || wardrobe.find((i) => i.category === 'shoes') || null
     const selectedOuterwear = wardrobe.find((i) => i.id === parsed.selectedOuterwearId) || wardrobe.find((i) => i.category === 'outerwear') || null
     const selectedAccessory = wardrobe.find((i) => i.id === parsed.selectedAccessoryId) || wardrobe.find((i) => i.category === 'accessories' || i.category === 'jewelry') || null
@@ -275,7 +287,7 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
     if (!hasAnyPiece) {
       return {
         intent: 'chat',
-        stylistMessage: parsed.stylistMessage || 'Rabiş, dolabında bu isteğe tam uyacak parça bulamadım. Yeni parçalar eklemek istersen 📸 kameradan yükleyebilirsin.',
+        stylistMessage: parsed.stylistMessage || 'Rabiş, dolabında henüz kıyafet bulunmuyor. Gardırobum sayfasına gidip parçalarını eklersen hemen sana harika kombinler yapabilirim.',
         outfitTitle: null,
         outfit: null,
         stylingNotes: [],
@@ -285,8 +297,8 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
 
     return {
       intent: 'outfit',
-      stylistMessage: parsed.stylistMessage || 'Senin için dolabından güzel bir kombin hazırladım.',
-      outfitTitle: parsed.outfitTitle || 'Özel Kombin',
+      stylistMessage: parsed.stylistMessage || 'Senin için dolabındaki parçalardan çok şık bir kombin hazırladım.',
+      outfitTitle: parsed.outfitTitle || 'Günün Kombini',
       outfit: {
         top: selectedTop,
         bottom: selectedBottom,
@@ -294,7 +306,7 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
         outerwear: selectedOuterwear,
         accessory: selectedAccessory,
       },
-      stylingNotes: parsed.stylingNotes || [],
+      stylingNotes: parsed.stylingNotes || ['Parçaların renklerini ve tarzını birbiriyle uyumlu şekilde eşleştirdim.'],
       detectedCity: parsed.detectedCity || '',
     }
   } catch (err) {
@@ -307,7 +319,9 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
     if (isCasual || wardrobe.length === 0) {
       return {
         intent: 'chat',
-        stylistMessage: 'Selam Rabiş! Günün nasıl geçiyor? Sohbet etmek veya dolabından bir kombin hazırlamak istersen buradayım.',
+        stylistMessage: wardrobe.length === 0 
+          ? 'Selam Rabiş! Kombin yapabilmem için önce Gardırobum sayfasına girip kıyafet ve takılarını yüklemen gerekiyor.'
+          : 'Selam Rabiş! Günün nasıl geçiyor? Dolabındaki parçalarla sana harika bir kombin yapmamı ister misin?',
         outfitTitle: null,
         outfit: null,
         stylingNotes: [],
@@ -315,14 +329,14 @@ Yanıtını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin eklem
       }
     }
 
-    const top = wardrobe.find((i) => i.category === 'tops') || wardrobe[0] || null
-    const bottom = wardrobe.find((i) => i.category === 'bottoms') || wardrobe[1] || null
+    const top = wardrobe.find((i) => i.category === 'tops' || i.category === 'dresses') || wardrobe[0] || null
+    const bottom = wardrobe.find((i) => i.category === 'bottoms') || (wardrobe.length > 1 ? wardrobe[1] : null)
     const shoes = wardrobe.find((i) => i.category === 'shoes') || null
     const accessory = wardrobe.find((i) => i.category === 'accessories' || i.category === 'jewelry') || null
 
     return {
       intent: 'outfit',
-      stylistMessage: 'İstediğin tarza uygun parçaları dolabından bir araya getirdim.',
+      stylistMessage: 'İstediğin tarza en uygun parçaları dolabından bir araya getirdim.',
       outfitTitle: 'Günün Kombini',
       outfit: { top, bottom, shoes, outerwear: null, accessory },
       stylingNotes: ['Parçaların renk uyumunu takı ve aksesuarlarla tamamlayabilirsin.'],

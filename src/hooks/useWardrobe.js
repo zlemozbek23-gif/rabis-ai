@@ -2,30 +2,34 @@ import { useState, useCallback } from 'react'
 import { analyzeClothingItem } from '../lib/gemini'
 import { uploadWardrobePhoto, deleteWardrobePhoto } from '../lib/storageUpload'
 import { insertWardrobeItem, deleteWardrobeItemDB } from '../lib/supabaseSync'
+import { compressImage } from '../lib/imageCompressor'
 import { useAppStore } from '../store/useAppStore'
 
 export function useWardrobe() {
   const [loading] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(null) // { current, total, percent }
+  const [uploadProgress, setUploadProgress] = useState(null) // { current, total, percent, currentName }
   const [error, setError] = useState(null)
   const { wardrobe, setWardrobe, addWardrobeItem, removeWardrobeItem, user } = useAppStore()
 
-  // Add a single clothing item
+  // Add a single clothing item with automatic compression and timeout protection
   const addClothingItem = useCallback(async (file) => {
     const uid = user?.uid
-    const itemId = 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
+    const itemId = 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)
 
-    // 1. Upload photo (Supabase Storage or base64 fallback)
-    const imageUrl = await uploadWardrobePhoto(uid || 'guest', itemId, file)
+    // 1. Instant client-side compression (converts 10MB to ~80KB)
+    const compressed = await compressImage(file, 700, 700, 0.75)
 
-    // 2. AI analysis
+    // 2. Upload photo (instant ~80KB base64 or Supabase Storage)
+    const imageUrl = await uploadWardrobePhoto(uid || 'guest', itemId, compressed)
+
+    // 3. AI analysis (with smart fallback so it never hangs)
     let analysis = {}
     try {
-      analysis = await analyzeClothingItem(file)
+      analysis = await analyzeClothingItem(compressed)
     } catch {
       analysis = {
-        name: file.name?.replace(/\.[^/.]+$/, '') || 'Kıyafet',
+        name: file.name?.replace(/\.[^/.]+$/, '') || 'Yeni Kıyafet',
         category: 'tops',
         color: 'Belirtilmedi',
         style: ['casual'],
@@ -40,13 +44,14 @@ export function useWardrobe() {
       createdAt: new Date().toISOString(),
     }
 
-    // 3. Save to Supabase DB (safe, no throw if error)
+    // 4. Update local store & IndexedDB immediately
+    addWardrobeItem(newItem)
+
+    // 5. Save to Supabase DB in background (safe, no blocking)
     if (uid && !user?.isGuest) {
-      await insertWardrobeItem(uid, newItem).catch(console.warn)
+      insertWardrobeItem(uid, newItem).catch((e) => console.warn('Supabase DB save warning:', e))
     }
 
-    // 4. Update local store
-    addWardrobeItem(newItem)
     return newItem
   }, [addWardrobeItem, user])
 
@@ -61,20 +66,28 @@ export function useWardrobe() {
     let completed = 0
     const addedItems = []
 
-    setUploadProgress({ current: 0, total, percent: 0 })
+    setUploadProgress({ current: 0, total, percent: 0, currentName: 'Başlatılıyor...' })
 
-    // Process with concurrency limit (2 at a time for API stability & speed)
-    const concurrency = 2
+    // Process with concurrency limit (3 at a time for optimal speed and reliability)
+    const concurrency = 3
     for (let i = 0; i < total; i += concurrency) {
       const batch = fileList.slice(i, i + concurrency)
       const results = await Promise.allSettled(
         batch.map(async (file) => {
-          const item = await addClothingItem(file)
-          completed++
-          const percent = Math.round((completed / total) * 100)
-          setUploadProgress({ current: completed, total, percent, currentName: file.name })
-          if (onProgressCallback) onProgressCallback(completed, total, file.name)
-          return item
+          try {
+            const item = await addClothingItem(file)
+            completed++
+            const percent = Math.round((completed / total) * 100)
+            setUploadProgress({ current: completed, total, percent, currentName: file.name })
+            if (onProgressCallback) onProgressCallback(completed, total, file.name)
+            return item
+          } catch (itemErr) {
+            completed++
+            const percent = Math.round((completed / total) * 100)
+            setUploadProgress({ current: completed, total, percent, currentName: file.name })
+            console.warn('Item upload warning:', itemErr)
+            return null
+          }
         })
       )
 
@@ -95,7 +108,7 @@ export function useWardrobe() {
     const itemId = typeof itemOrId === 'object' ? itemOrId?.id : itemOrId
     if (!itemId) return
 
-    // 1. Immediately remove from local state so UI updates instantly!
+    // 1. Immediately remove from local state and IndexedDB so UI updates instantly
     removeWardrobeItem(itemId)
 
     // 2. Safely remove from Supabase DB & Storage in background
@@ -107,7 +120,7 @@ export function useWardrobe() {
           deleteWardrobePhoto(uid, itemId),
         ])
       } catch (err) {
-        console.warn('Background delete error (ignored for smooth UX):', err)
+        console.warn('Background delete error (ignored):', err)
       }
     }
   }, [removeWardrobeItem, user])
