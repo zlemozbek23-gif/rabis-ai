@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { consultPersonalStylist, analyzeFaceAndBodyPhoto, analyzeClothingItem, fileToBase64 } from '../lib/gemini'
 import { useAppStore } from '../store/useAppStore'
 import { useWardrobe } from '../hooks/useWardrobe'
@@ -283,7 +284,8 @@ function ChatBubble({ message, onAskAlternative, onSaveOutfit, savedOutfitTitles
    MAIN CHAT PAGE
    ═══════════════════════════════════════════════════════ */
 export default function ChatPage() {
-  const { wardrobe, addClothingItem, addClothingItems, deleteClothingItem } = useWardrobe()
+  const navigate = useNavigate()
+  const { wardrobe } = useWardrobe()
   const { weather } = useWeather()
   const { user } = useAuth()
   const {
@@ -295,13 +297,10 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [photoUploading, setPhotoUploading] = useState(false)
-  const [showWardrobeDrawer, setShowWardrobeDrawer] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
 
   const messagesEndRef = useRef(null)
-  const photoInputRef = useRef(null)
   const userPhotoInputRef = useRef(null)
-  const drawerPhotoInputRef = useRef(null)
 
   const {
     isListening,
@@ -376,50 +375,6 @@ export default function ChatPage() {
     }
   }
 
-  const handleClothingPhotoUpload = async (e) => {
-    const rawFiles = e.target.files
-    if (!rawFiles || rawFiles.length === 0) return
-    const files = Array.from(rawFiles).slice(0, 100)
-
-    setPhotoUploading(true)
-    if (files.length === 1) {
-      addChatMessage({
-        role: 'user',
-        text: '📸 Yeni bir kıyafetimin fotoğrafını çektim!',
-      })
-    } else {
-      addChatMessage({
-        role: 'user',
-        text: `📸 Dolabıma toplu ${files.length} parça kıyafet yüklüyorum!`,
-      })
-    }
-
-    try {
-      if (files.length === 1) {
-        const newItem = await addClothingItem(files[0])
-        addChatMessage({
-          role: 'model',
-          text: `Harika bir parça! "${newItem?.name || 'Yeni parça'}" dolabına eklendi 🛍️\nKategori: ${newItem?.category || 'Kıyafet'} • Renk: ${newItem?.color || 'Özel'}\n\nŞimdi bu yeni parçanla sana bir kombin yapmamı ister misin?`,
-        })
-      } else {
-        const newItems = await addClothingItems(files)
-        addChatMessage({
-          role: 'model',
-          text: `✨ Harika! ${newItems.length} yeni kıyafetin başarıyla analiz edilip dolabına eklendi 🛍️\n\nArtık dolabında daha çok seçenek var! Şimdi bu kıyafetlerle sana harika bir kombin hazırlayabilirim, ne dersin?`,
-        })
-      }
-    } catch (err) {
-      console.error('Upload error:', err)
-      addChatMessage({
-        role: 'model',
-        text: 'Fotoğrafları analiz ederken bir sorun oluştu, lütfen tekrar dener misin?',
-      })
-    } finally {
-      setPhotoUploading(false)
-      if (photoInputRef.current) photoInputRef.current.value = ''
-      if (drawerPhotoInputRef.current) drawerPhotoInputRef.current.value = ''
-    }
-  }
 
   const handleUserPhotoUpdate = async (e) => {
     const file = e.target.files?.[0]
@@ -539,7 +494,7 @@ export default function ChatPage() {
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
-            onClick={() => setShowWardrobeDrawer(true)}
+            onClick={() => navigate('/wardrobe')}
             style={{
               padding: '9px 16px',
               borderRadius: 14,
@@ -618,10 +573,32 @@ export default function ChatPage() {
               </h2>
               <p style={{
                 fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)',
-                margin: '6px auto 0', maxWidth: 300, lineHeight: 1.5,
+                margin: '8px auto 0', maxWidth: 300, lineHeight: 1.5,
               }}>
-                Bana ne istediğini yaz, mikrofona konuş veya kıyafet fotoğrafı yükle!
+                {wardrobe.length === 0
+                  ? 'Dolabın henüz boş. Önce kıyafet ve takılarını yükle, sonra sana harika kombinler çıkarayım!'
+                  : `Dolabındaki ${wardrobe.length} parçayla sana özel kombinler hazırlamaya hazırım!`}
               </p>
+
+              {wardrobe.length === 0 && (
+                <button
+                  onClick={() => navigate('/wardrobe')}
+                  style={{
+                    marginTop: 14,
+                    padding: '12px 20px',
+                    borderRadius: 14,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 20px rgba(124, 58, 237, 0.3)',
+                  }}
+                >
+                  👗 Gardırobuma Parça Ekle →
+                </button>
+              )}
             </div>
 
             {/* Quick Prompts */}
@@ -934,34 +911,7 @@ export default function ChatPage() {
             🎙️
           </button>
 
-          {/* Camera Button */}
-          <button
-            type="button"
-            title="Kıyafet Fotoğrafı Çek"
-            onClick={() => photoInputRef.current?.click()}
-            disabled={photoUploading || loading}
-            style={{
-              width: 46, height: 46, borderRadius: 16,
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: 'var(--text-secondary)',
-              fontSize: 20,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-              transition: 'all 0.2s',
-            }}
-          >
-            📸
-          </button>
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleClothingPhotoUpload}
-            style={{ display: 'none' }}
-          />
+
 
           {/* Text Input */}
           <input
@@ -1010,182 +960,7 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* ═══════ WARDROBE DRAWER ═══════ */}
-      {showWardrobeDrawer && (
-        <div
-          className="fade-in"
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.75)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            zIndex: 150,
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          }}
-          onClick={(e) => e.target === e.currentTarget && setShowWardrobeDrawer(false)}
-        >
-          <div
-            className="slide-up"
-            style={{
-              width: '100%', maxWidth: 500, maxHeight: '82vh',
-              background: 'rgba(12, 11, 20, 0.98)',
-              borderTop: '1px solid rgba(167, 139, 250, 0.15)',
-              borderRadius: '32px 32px 0 0',
-              padding: '22px 20px 36px',
-              display: 'flex', flexDirection: 'column',
-              boxShadow: '0 -24px 60px rgba(0,0,0,0.8)',
-            }}
-          >
-            {/* Drawer Handle */}
-            <div style={{
-              width: 36, height: 4, background: 'rgba(167, 139, 250, 0.25)',
-              borderRadius: 2, margin: '0 auto 18px',
-            }} />
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <div>
-                <h3 className="font-editorial" style={{
-                  fontSize: 20, fontWeight: 700, margin: 0,
-                  background: 'linear-gradient(135deg, #fff 30%, #d9b478 100%)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>
-                  Rabiş'in Dolabı
-                </h3>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', fontWeight: 500 }}>
-                  {wardrobe.length} parça • Yapay zeka bu parçalardan kombin yapar
-                </p>
-              </div>
-
-              <button
-                onClick={() => drawerPhotoInputRef.current?.click()}
-                disabled={photoUploading}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
-                  color: '#fff', border: 'none',
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  boxShadow: '0 6px 20px rgba(124, 58, 237, 0.3)',
-                }}
-              >
-                <span>+</span>
-                <span>Parça Ekle</span>
-              </button>
-              <input
-                ref={drawerPhotoInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleClothingPhotoUpload}
-                style={{ display: 'none' }}
-              />
-            </div>
-
-            {/* Wardrobe Grid */}
-            <div style={{
-              flex: 1, overflowY: 'auto',
-              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 12, padding: 4,
-            }}>
-              {wardrobe.length === 0 ? (
-                <div style={{
-                  gridColumn: '1 / -1', textAlign: 'center', padding: '40px 20px',
-                  color: 'var(--text-muted)',
-                }}>
-                  <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}>👗</div>
-                  <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: 'var(--text-secondary)' }}>
-                    Dolabın henüz boş
-                  </p>
-                  <p style={{ fontSize: 12 }}>
-                    + Parça Ekle butonuna dokunarak kıyafetlerinin fotoğrafını çek
-                  </p>
-                </div>
-              ) : (
-                wardrobe.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.025)',
-                      border: '1px solid rgba(255, 255, 255, 0.06)',
-                      borderRadius: 20,
-                      padding: 8,
-                      textAlign: 'center',
-                      position: 'relative',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <div style={{
-                      width: '100%', aspectRatio: '1', borderRadius: 14,
-                      overflow: 'hidden', marginBottom: 8,
-                      background: 'linear-gradient(135deg, #0a0a12, #12111e)',
-                    }}>
-                      <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-
-                    {/* Category badge */}
-                    <span style={{
-                      position: 'absolute', top: 6, right: 6,
-                      fontSize: 8, fontWeight: 700, padding: '3px 7px',
-                      borderRadius: 8, background: 'rgba(167, 139, 250, 0.20)',
-                      color: 'var(--accent-violet-light)', letterSpacing: 0.5,
-                      textTransform: 'uppercase',
-                    }}>
-                      {item.category}
-                    </span>
-
-                    <p style={{
-                      fontSize: 11, fontWeight: 700, color: '#fff',
-                      margin: '0 0 2px', overflow: 'hidden',
-                      textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {item.name}
-                    </p>
-                    {item.color && (
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                        {item.color}
-                      </span>
-                    )}
-
-                    {/* Delete button */}
-                    <button
-                      onClick={() => deleteClothingItem(item.id)}
-                      style={{
-                        position: 'absolute', top: 6, left: 6,
-                        width: 24, height: 24, borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.65)',
-                        backdropFilter: 'blur(8px)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'rgba(255,255,255,0.6)',
-                        fontSize: 12, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <button
-              onClick={() => setShowWardrobeDrawer(false)}
-              style={{
-                marginTop: 16, width: '100%', padding: 14,
-                borderRadius: 16,
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-                color: 'var(--text-secondary)',
-                fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              Kapat
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ═══════ PROFILE MODAL ═══════ */}
       {showProfileModal && (

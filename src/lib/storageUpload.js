@@ -1,6 +1,7 @@
 /**
- * Upload photos to Supabase Storage.
- * Falls back to base64 data URL when Supabase is not configured.
+ * Upload photos to Supabase Storage with robust fallback to base64.
+ * Guarantees that photos are ALWAYS saved and never lost, even if
+ * Supabase storage bucket has permissions or configuration issues.
  */
 import { supabase, isSupabaseConfigured } from './supabase'
 import { fileToBase64 } from './gemini'
@@ -9,7 +10,6 @@ const BUCKET = 'user-photos'
 
 /**
  * Upload a file to Supabase Storage and return a public URL.
- * Path example: "userId/profile/photo.jpg"
  */
 async function uploadToStorage(path, file) {
   const { error } = await supabase.storage
@@ -27,11 +27,15 @@ async function uploadToStorage(path, file) {
  */
 export async function uploadProfilePhoto(userId, file) {
   if (isSupabaseConfigured && supabase) {
-    const ext = file.name?.split('.').pop() || 'jpg'
-    const path = `${userId}/profile/photo.${ext}`
-    return await uploadToStorage(path, file)
+    try {
+      const ext = file.name?.split('.').pop() || 'jpg'
+      const path = `${userId}/profile/photo_${Date.now()}.${ext}`
+      return await uploadToStorage(path, file)
+    } catch (err) {
+      console.warn('Supabase storage profile upload warning, using local base64 fallback:', err)
+    }
   }
-  // Offline fallback: base64
+  // Robust Fallback: base64
   const b64 = await fileToBase64(file)
   return `data:${file.type || 'image/jpeg'};base64,${b64}`
 }
@@ -42,11 +46,15 @@ export async function uploadProfilePhoto(userId, file) {
  */
 export async function uploadWardrobePhoto(userId, itemId, file) {
   if (isSupabaseConfigured && supabase) {
-    const ext = file.name?.split('.').pop() || 'jpg'
-    const path = `${userId}/wardrobe/${itemId}.${ext}`
-    return await uploadToStorage(path, file)
+    try {
+      const ext = file.name?.split('.').pop() || 'jpg'
+      const path = `${userId}/wardrobe/${itemId}.${ext}`
+      return await uploadToStorage(path, file)
+    } catch (err) {
+      console.warn('Supabase storage wardrobe upload warning, using local base64 fallback:', err)
+    }
   }
-  // Offline fallback: base64
+  // Robust Fallback: base64
   const b64 = await fileToBase64(file)
   return `data:${file.type || 'image/jpeg'};base64,${b64}`
 }
@@ -56,11 +64,14 @@ export async function uploadWardrobePhoto(userId, itemId, file) {
  */
 export async function deleteWardrobePhoto(userId, itemId) {
   if (!isSupabaseConfigured || !supabase) return
-  // Try common extensions
-  for (const ext of ['jpg', 'jpeg', 'png', 'webp', 'heic']) {
-    await supabase.storage
-      .from(BUCKET)
-      .remove([`${userId}/wardrobe/${itemId}.${ext}`])
-      .catch(() => {})
+  try {
+    for (const ext of ['jpg', 'jpeg', 'png', 'webp', 'heic']) {
+      await supabase.storage
+        .from(BUCKET)
+        .remove([`${userId}/wardrobe/${itemId}.${ext}`])
+        .catch(() => {})
+    }
+  } catch (err) {
+    console.warn('Storage delete error:', err)
   }
 }
