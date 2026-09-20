@@ -208,7 +208,6 @@ export default function SavedPage() {
                   ref={faceInputRef}
                   type="file"
                   accept="image/*"
-                  capture="user"
                   onChange={handleFacePhotoUpload}
                   style={{ display: 'none' }}
                 />

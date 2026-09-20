@@ -283,7 +283,7 @@ function ChatBubble({ message, onAskAlternative, onSaveOutfit, savedOutfitTitles
    MAIN CHAT PAGE
    ═══════════════════════════════════════════════════════ */
 export default function ChatPage() {
-  const { wardrobe, addClothingItem, deleteClothingItem } = useWardrobe()
+  const { wardrobe, addClothingItem, addClothingItems, deleteClothingItem } = useWardrobe()
   const { weather } = useWeather()
   const { user } = useAuth()
   const {
@@ -377,26 +377,42 @@ export default function ChatPage() {
   }
 
   const handleClothingPhotoUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const rawFiles = e.target.files
+    if (!rawFiles || rawFiles.length === 0) return
+    const files = Array.from(rawFiles).slice(0, 100)
 
     setPhotoUploading(true)
-    addChatMessage({
-      role: 'user',
-      text: '📸 Yeni bir kıyafetimin fotoğrafını çektim!',
-    })
+    if (files.length === 1) {
+      addChatMessage({
+        role: 'user',
+        text: '📸 Yeni bir kıyafetimin fotoğrafını çektim!',
+      })
+    } else {
+      addChatMessage({
+        role: 'user',
+        text: `📸 Dolabıma toplu ${files.length} parça kıyafet yüklüyorum!`,
+      })
+    }
 
     try {
-      const newItem = await addClothingItem(file)
-      addChatMessage({
-        role: 'model',
-        text: `Harika bir parça! "${newItem?.name || 'Yeni parça'}" dolabına eklendi 🛍️\nKategori: ${newItem?.category || 'Kıyafet'} • Renk: ${newItem?.color || 'Özel'}\n\nŞimdi bu yeni parçanla sana bir kombin yapmamı ister misin?`,
-      })
+      if (files.length === 1) {
+        const newItem = await addClothingItem(files[0])
+        addChatMessage({
+          role: 'model',
+          text: `Harika bir parça! "${newItem?.name || 'Yeni parça'}" dolabına eklendi 🛍️\nKategori: ${newItem?.category || 'Kıyafet'} • Renk: ${newItem?.color || 'Özel'}\n\nŞimdi bu yeni parçanla sana bir kombin yapmamı ister misin?`,
+        })
+      } else {
+        const newItems = await addClothingItems(files)
+        addChatMessage({
+          role: 'model',
+          text: `✨ Harika! ${newItems.length} yeni kıyafetin başarıyla analiz edilip dolabına eklendi 🛍️\n\nArtık dolabında daha çok seçenek var! Şimdi bu kıyafetlerle sana harika bir kombin hazırlayabilirim, ne dersin?`,
+        })
+      }
     } catch (err) {
       console.error('Upload error:', err)
       addChatMessage({
         role: 'model',
-        text: 'Fotoğrafı analiz ederken bir sorun oluştu, lütfen tekrar dener misin?',
+        text: 'Fotoğrafları analiz ederken bir sorun oluştu, lütfen tekrar dener misin?',
       })
     } finally {
       setPhotoUploading(false)
@@ -948,6 +964,7 @@ export default function ChatPage() {
             ref={photoInputRef}
             type="file"
             accept="image/*"
+            multiple
             onChange={handleClothingPhotoUpload}
             style={{ display: 'none' }}
           />
@@ -1065,6 +1082,7 @@ export default function ChatPage() {
                 ref={drawerPhotoInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleClothingPhotoUpload}
                 style={{ display: 'none' }}
               />
@@ -1317,7 +1335,6 @@ export default function ChatPage() {
               ref={userPhotoInputRef}
               type="file"
               accept="image/*"
-              capture="user"
               onChange={handleUserPhotoUpdate}
               style={{ display: 'none' }}
             />

@@ -57,33 +57,43 @@ export default function OnboardingPage() {
   }
 
   const handleClothUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const rawFiles = e.target.files
+    if (!rawFiles || rawFiles.length === 0) return
+    const files = Array.from(rawFiles).slice(0, 100)
     setUploadingCloth(true)
+
     try {
-      const itemId = 'item_' + Date.now()
-      const imageUrl = await uploadWardrobePhoto(user?.uid || 'guest', itemId, file)
-      let itemAnalysis = {}
-      try {
-        itemAnalysis = await analyzeClothingItem(file)
-      } catch {
-        itemAnalysis = {
-          name: file.name?.replace(/\.[^/.]+$/, '') || 'Yeni Kıyafet',
-          category: 'tops',
-          color: 'Özel',
-        }
+      const concurrency = 2
+      for (let i = 0; i < files.length; i += concurrency) {
+        const batch = files.slice(i, i + concurrency)
+        await Promise.allSettled(
+          batch.map(async (file) => {
+            const itemId = 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
+            const imageUrl = await uploadWardrobePhoto(user?.uid || 'guest', itemId, file)
+            let itemAnalysis = {}
+            try {
+              itemAnalysis = await analyzeClothingItem(file)
+            } catch {
+              itemAnalysis = {
+                name: file.name?.replace(/\.[^/.]+$/, '') || 'Yeni Kıyafet',
+                category: 'tops',
+                color: 'Özel',
+              }
+            }
+            const newItem = {
+              id: itemId,
+              ...itemAnalysis,
+              imageUrl,
+              createdAt: new Date().toISOString(),
+            }
+            if (user?.uid && !user?.isGuest) {
+              await insertWardrobeItem(user.uid, newItem).catch(console.warn)
+            }
+            addWardrobeItem(newItem)
+            setAddedClothesCount((c) => c + 1)
+          })
+        )
       }
-      const newItem = {
-        id: itemId,
-        ...itemAnalysis,
-        imageUrl,
-        createdAt: new Date().toISOString(),
-      }
-      if (user?.uid && !user?.isGuest) {
-        await insertWardrobeItem(user.uid, newItem).catch(console.warn)
-      }
-      addWardrobeItem(newItem)
-      setAddedClothesCount((c) => c + 1)
     } catch (err) {
       console.error('Clothing upload error:', err)
     } finally {
@@ -482,13 +492,14 @@ export default function OnboardingPage() {
                 }}
               >
                 <span>📸</span>
-                <span>Fotoğraf Çek / Yükle</span>
+                <span>📸 Çoklu Fotoğraf Çek / Yükle (100'e kadar)</span>
               </button>
 
               <input
                 ref={clothInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleClothUpload}
                 style={{ display: 'none' }}
               />

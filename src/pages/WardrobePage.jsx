@@ -166,16 +166,17 @@ function ClothingCard({ item, onDelete, onTryOn }) {
   )
 }
 
-function UploadOverlay({ onClose, onUpload, uploading }) {
+function UploadOverlay({ onClose, onUploadFiles, uploading, uploadProgress }) {
   const onDrop = useCallback((acceptedFiles) => {
-    if (acceptedFiles.length > 0) onUpload(acceptedFiles[0])
-  }, [onUpload])
+    if (acceptedFiles.length > 0) onUploadFiles(acceptedFiles)
+  }, [onUploadFiles])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.heic'] },
-    maxFiles: 1,
-    maxSize: 15 * 1024 * 1024,
+    maxFiles: 100,
+    maxSize: 20 * 1024 * 1024,
+    multiple: true,
   })
 
   const cameraRef = useRef(null)
@@ -185,14 +186,14 @@ function UploadOverlay({ onClose, onUpload, uploading }) {
       position: 'fixed',
       inset: 0,
       zIndex: 200,
-      background: 'rgba(0, 0, 0, 0.8)',
+      background: 'rgba(0, 0, 0, 0.82)',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
       display: 'flex',
       alignItems: 'flex-end',
       justifyContent: 'center',
     }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && !uploading && onClose()}
     >
       <div className="card fade-in" style={{
         width: '100%',
@@ -200,21 +201,21 @@ function UploadOverlay({ onClose, onUpload, uploading }) {
         borderRadius: '28px 28px 0 0',
         padding: '24px 20px',
         paddingBottom: 'calc(var(--safe-bottom) + 30px)',
-        background: 'rgba(15, 15, 20, 0.95)',
+        background: 'rgba(15, 15, 20, 0.98)',
         border: '1px solid rgba(255, 255, 255, 0.12)',
         boxShadow: '0 -20px 40px rgba(0,0,0,0.8)',
       }}>
         <div style={{ width: 44, height: 4, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 2, margin: '0 auto 20px' }} />
 
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <span className="badge badge-gold" style={{ marginBottom: 8 }}>
-            AI HAUTE COUTURE
+            TOPLU KIYAFET YÜKLEME
           </span>
           <h3 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px', marginTop: 4 }}>
-            Gardırobuna Parça Ekle
+            Gardırobuna Parçalar Ekle
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>
-            Fotoğrafını yükle, yapay zeka 3D modeline giydirsin
+            Galeriden veya kameradan <strong>100 parçaya kadar</strong> tek seferde seçebilirsin
           </p>
         </div>
 
@@ -224,19 +225,23 @@ function UploadOverlay({ onClose, onUpload, uploading }) {
             marginBottom: 12,
             padding: 16,
             fontSize: 15,
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #d4af37 100%)',
+            background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
           }}
           onClick={() => cameraRef.current?.click()}
           disabled={uploading}
         >
-          📸 iPhone Kamerasıyla Çek
+          📸 Kameradan / Galeriden Çoklu Seç
         </button>
         <input
           ref={cameraRef}
           type="file"
           accept="image/*"
-          capture="environment"
-          onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+          multiple
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              onUploadFiles(Array.from(e.target.files))
+            }
+          }}
           style={{ display: 'none' }}
         />
 
@@ -245,9 +250,9 @@ function UploadOverlay({ onClose, onUpload, uploading }) {
           style={{
             border: `1.5px dashed ${isDragActive ? 'var(--accent-purple)' : 'rgba(255, 255, 255, 0.15)'}`,
             borderRadius: 18,
-            padding: '26px 16px',
+            padding: '24px 16px',
             textAlign: 'center',
-            cursor: 'pointer',
+            cursor: uploading ? 'default' : 'pointer',
             background: isDragActive ? 'rgba(139, 92, 246, 0.08)' : 'rgba(255, 255, 255, 0.02)',
             transition: 'all 0.2s',
           }}
@@ -255,16 +260,56 @@ function UploadOverlay({ onClose, onUpload, uploading }) {
           <input {...getInputProps()} />
           <div style={{ fontSize: 32, marginBottom: 8 }}>🖼️</div>
           <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600 }}>
-            {isDragActive ? 'Bırakın...' : 'Galeriden Seç'}
+            {isDragActive ? 'Bırakın...' : 'Fotoğrafları Buraya Sürükle veya Çoklu Seç'}
           </p>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+            Maksimum 100 fotoğraf
+          </span>
         </div>
 
         {uploading && (
-          <div style={{ textAlign: 'center', marginTop: 20 }}>
-            <div className="spinner" style={{ margin: '0 auto 8px' }} />
-            <p style={{ color: 'var(--accent-gold)', fontSize: 13, fontWeight: 600 }}>
-              Yapay Zeka Analiz Ediyor...
-            </p>
+          <div style={{
+            marginTop: 18,
+            padding: 14,
+            borderRadius: 16,
+            background: 'rgba(124, 58, 237, 0.1)',
+            border: '1px solid rgba(167, 139, 250, 0.25)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>
+                ✨ Yapay Zeka Parçaları İnceliyor...
+              </span>
+              <span style={{ color: 'var(--accent-gold)', fontSize: 13, fontWeight: 800 }}>
+                {uploadProgress ? `${uploadProgress.current} / ${uploadProgress.total}` : 'Hazırlanıyor...'}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div style={{
+              width: '100%',
+              height: 6,
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: 3,
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${uploadProgress?.percent || 15}%`,
+                background: 'linear-gradient(90deg, #7c3aed 0%, #d9b478 100%)',
+                borderRadius: 3,
+                transition: 'width 0.3s ease',
+              }} />
+            </div>
+
+            {uploadProgress?.currentName && (
+              <p style={{
+                fontSize: 11, color: 'var(--text-muted)',
+                margin: '8px 0 0', overflow: 'hidden',
+                textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                İncelenen: {uploadProgress.currentName}
+              </p>
+            )}
           </div>
         )}
 
@@ -274,7 +319,7 @@ function UploadOverlay({ onClose, onUpload, uploading }) {
           onClick={onClose}
           disabled={uploading}
         >
-          Kapat
+          {uploading ? 'Lütfen Bekleyin...' : 'Kapat'}
         </button>
       </div>
     </div>
@@ -282,7 +327,7 @@ function UploadOverlay({ onClose, onUpload, uploading }) {
 }
 
 export default function WardrobePage() {
-  const { wardrobe, loading, uploading, addClothingItem, deleteClothingItem } = useWardrobe()
+  const { wardrobe, loading, uploading, uploadProgress, addClothingItems, deleteClothingItem } = useWardrobe()
   const { user } = useAuth()
   const { avatarConfig, profile, selectedOutfitForStudio, setSelectedOutfitForStudio } = useAppStore()
   const [viewMode, setViewMode] = useState('studio') // 'studio' | 'catalog'
@@ -312,13 +357,13 @@ export default function WardrobePage() {
     ? wardrobe
     : wardrobe.filter((item) => item.category === activeCategory)
 
-  const handleUpload = async (file) => {
+  const handleUploadFiles = async (files) => {
     setUploadError('')
     try {
-      await addClothingItem(file)
+      await addClothingItems(files)
       setShowUpload(false)
     } catch (err) {
-      setUploadError('Yükleme başarısız: ' + err.message)
+      setUploadError('Yükleme sırasında hata: ' + err.message)
     }
   }
 
@@ -527,8 +572,9 @@ export default function WardrobePage() {
       {showUpload && (
         <UploadOverlay
           onClose={() => { if (!uploading) setShowUpload(false) }}
-          onUpload={handleUpload}
+          onUploadFiles={handleUploadFiles}
           uploading={uploading}
+          uploadProgress={uploadProgress}
         />
       )}
     </div>
