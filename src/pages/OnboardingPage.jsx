@@ -58,7 +58,7 @@ export default function OnboardingPage() {
         itemAnalysis = await analyzeClothingItem(file)
       } catch {
         itemAnalysis = {
-          name: file.name?.replace(/\\.[^/.]+$/, '') || 'Yeni Kıyafet',
+          name: file.name?.replace(/\.[^/.]+$/, '') || 'Yeni Kıyafet',
           category: 'tops',
           color: 'Özel',
         }
@@ -80,213 +80,500 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div 
-      className="min-h-screen w-full flex justify-center items-center relative overflow-y-auto"
+    <div
       style={{
-        backgroundColor: '#06060a',
-        background: 'radial-gradient(circle at 20% 30%, rgba(88, 28, 135, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(225, 112, 85, 0.1) 0%, transparent 50%), #06060a'
+        minHeight: '100dvh',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        background: 'var(--bg, #06060a)',
+        color: '#fff',
+        padding: '28px 20px',
+        overflowY: 'auto',
+        position: 'relative',
       }}
     >
-      {/* Floating particles background effect */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      {/* Ambient background glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 350,
+          background: 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124, 58, 237, 0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
 
-      <div className="w-full max-w-[440px] min-h-screen flex flex-col p-6 relative z-10 fade-in">
-        
+      <div
+        className="fade-in"
+        style={{
+          width: '100%',
+          maxWidth: 440,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         {/* Step Indicator */}
-        <div className="flex justify-center items-center gap-3 mt-8 mb-12">
-          <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${step === 1 ? 'bg-gradient-to-r from-rose-400 to-purple-500 shadow-[0_0_10px_rgba(244,63,94,0.6)] scale-125' : 'bg-gray-700'}`} />
-          <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${step === 2 ? 'bg-gradient-to-r from-rose-400 to-purple-500 shadow-[0_0_10px_rgba(244,63,94,0.6)] scale-125' : 'bg-gray-700'}`} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28, marginTop: 8 }}>
+          <div
+            style={{
+              width: step === 1 ? 28 : 10,
+              height: 6,
+              borderRadius: 3,
+              background: step === 1 ? 'linear-gradient(90deg, #a78bfa, #d9b478)' : 'rgba(255, 255, 255, 0.15)',
+              transition: 'all 0.3s ease',
+            }}
+          />
+          <div
+            style={{
+              width: step === 2 ? 28 : 10,
+              height: 6,
+              borderRadius: 3,
+              background: step === 2 ? 'linear-gradient(90deg, #a78bfa, #d9b478)' : 'rgba(255, 255, 255, 0.15)',
+              transition: 'all 0.3s ease',
+            }}
+          />
         </div>
 
+        {/* ═══════════ STEP 1: USER PHOTO & BODY ANALYSIS ═══════════ */}
         {step === 1 && (
-          <div className="flex-1 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h1 className="text-3xl font-editorial text-center text-white mb-2 tracking-wide font-light">
-              Hoş geldin, <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-purple-300 to-rose-200">Rabiş! ✨</span>
-            </h1>
-            <p className="text-gray-400 text-center mb-10 font-light tracking-wide text-sm">
-              Yapay zeka stilistin seni tanımaya hazır
-            </p>
-
-            <div className="relative mb-10 flex flex-col items-center">
-              <input
-                type="file"
-                accept="image/*"
-                ref={photoInputRef}
-                onChange={handlePhotoSelect}
-                className="hidden"
-              />
-              
-              <div 
-                onClick={() => !analyzingPhoto && photoInputRef.current?.click()}
-                className={`relative w-[200px] h-[200px] rounded-full flex items-center justify-center cursor-pointer transition-all duration-500
-                  ${photoPreview ? 'border-2 border-rose-300/50 shadow-[0_0_30px_rgba(253,164,175,0.15)]' : 'border-2 border-dashed border-gray-600 hover:border-rose-400/50 hover:shadow-[0_0_20px_rgba(253,164,175,0.1)]'}`}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* Title & Subtitle */}
+            <div style={{ textAlign: 'center', marginBottom: 26 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  color: 'var(--accent-violet-light, #c4b5fd)',
+                  display: 'block',
+                  marginBottom: 8,
+                }}
               >
-                {/* Pulsing ring */}
-                {!photoPreview && (
-                  <div className="absolute inset-[-10px] rounded-full border border-rose-400/20 animate-ping opacity-50" style={{ animationDuration: '3s' }} />
-                )}
-
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Profil" className="w-full h-full object-cover rounded-full p-1" />
-                ) : (
-                  <div className="text-gray-500 flex flex-col items-center">
-                    <span className="text-3xl mb-2">📸</span>
-                    <span className="text-xs uppercase tracking-widest">Fotoğraf Seç</span>
-                  </div>
-                )}
-
-                {analyzingPhoto && (
-                  <div className="absolute inset-0 rounded-full bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent animate-shimmer" style={{ transform: 'translateX(-100%)' }} />
-                    <div className="spinner w-8 h-8 border-2 border-rose-300 border-t-transparent rounded-full animate-spin mb-3"></div>
-                    <span className="text-xs text-rose-100 tracking-wider text-center px-4 leading-relaxed font-light">✨ Rabiş'in tarz profili çıkarılıyor...</span>
-                  </div>
-                )}
-              </div>
+                KİŞİSEL STİLİSTİN HAZIR
+              </span>
+              <h1
+                className="font-editorial"
+                style={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  margin: 0,
+                  background: 'linear-gradient(135deg, #fff 30%, #d9b478 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Hoş geldin, Rabiş! ✨
+              </h1>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary, #8b8a97)', marginTop: 8, lineHeight: 1.5, maxWidth: 320 }}>
+                Yapay zeka yüz tipini, ten alt tonunu ve vücut silüetini analiz edip sana özel kombinler üretsin.
+              </p>
             </div>
 
-            {analysisResult && !analyzingPhoto && (
-              <div className="w-full card bg-white/[0.03] border border-white/10 backdrop-blur-md rounded-2xl p-6 mb-8 shadow-xl shadow-black/50">
-                <h3 className="text-rose-200/90 text-xs uppercase tracking-[0.2em] mb-4 text-center font-medium">Stil Analizin</h3>
-                <div className="space-y-4 text-sm text-gray-300">
-                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                    <span className="font-light">Vücut Tipi</span>
-                    <span className="text-white capitalize">{analysisResult.bodyShape || 'Belirtilmedi'}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                    <span className="font-light">Yüz Şekli</span>
-                    <span className="text-white capitalize">{profile?.faceAnalysis?.faceShape || 'Belirtilmedi'}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                    <span className="font-light">Cilt Alt Tonu</span>
-                    <span className="text-white capitalize">{profile?.faceAnalysis?.skinTone || 'Belirtilmedi'}</span>
-                  </div>
-                  <div className="pt-2">
-                    <span className="font-light block mb-3">En İyi Renklerin</span>
-                    <div className="flex gap-3 flex-wrap">
-                      {(profile?.faceAnalysis?.colorPalette || ['#ff9999', '#99ccff', '#ffcc99']).slice(0,5).map((color, idx) => (
-                        <div key={idx} className="flex flex-col items-center gap-1.5">
-                          <div 
-                            className="w-6 h-6 rounded-full shadow-inner ring-1 ring-white/20"
-                            style={{ backgroundColor: color }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setStep(2)}
-              disabled={!photoPreview || analyzingPhoto}
-              className={`w-full py-4 rounded-xl font-medium tracking-wide transition-all duration-300 mt-auto shadow-lg
-                ${(photoPreview && !analyzingPhoto) 
-                  ? 'bg-gradient-to-r from-rose-400 via-purple-500 to-indigo-500 text-white shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5' 
-                  : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5'}`}
+            {/* Circular Photo Upload Frame */}
+            <div
+              onClick={() => !analyzingPhoto && photoInputRef.current?.click()}
+              style={{
+                width: 200,
+                height: 200,
+                borderRadius: '50%',
+                border: photoPreview ? '2px solid rgba(167, 139, 250, 0.5)' : '2px dashed rgba(167, 139, 250, 0.35)',
+                background: photoPreview ? '#000' : 'rgba(255, 255, 255, 0.02)',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: analyzingPhoto ? 'default' : 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 26,
+                boxShadow: photoPreview
+                  ? '0 12px 40px -10px rgba(124, 58, 237, 0.35)'
+                  : '0 8px 30px rgba(0,0,0,0.5)',
+                transition: 'all 0.3s ease',
+              }}
             >
-              Harika! Dolabıma Geçelim →
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
-            <h1 className="text-3xl font-editorial text-center text-white mb-2 tracking-wide font-light">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-300 to-purple-300">Rabiş'in</span> Dolabı 👗
-            </h1>
-            <p className="text-gray-400 text-center mb-8 font-light tracking-wide text-sm">
-              Fotoğrafını çek, yapay zeka anında tanısın
-            </p>
-
-            <div className="mb-8">
-              <input
-                type="file"
-                accept="image/*"
-                ref={clothInputRef}
-                onChange={handleClothUpload}
-                className="hidden"
-              />
-              <div 
-                onClick={() => !uploadingCloth && clothInputRef.current?.click()}
-                className={`relative w-full h-32 rounded-2xl border-2 border-dashed bg-white/[0.02] backdrop-blur-sm flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group overflow-hidden
-                  ${uploadingCloth ? 'border-rose-400/50' : 'border-white/10 hover:border-rose-400/40 hover:bg-white/[0.04]'}`}
-              >
-                {uploadingCloth ? (
-                  <div className="flex flex-col items-center gap-3 z-10">
-                    <div className="spinner w-6 h-6 border-2 border-rose-300 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs text-rose-200 tracking-widest font-light uppercase">İnceleniyor...</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center text-gray-400 group-hover:text-rose-200 transition-colors z-10">
-                    <span className="text-2xl mb-2 drop-shadow-md">✨</span>
-                    <span className="text-sm font-light tracking-wide">Kıyafet Ekle</span>
-                  </div>
-                )}
-                
-                {uploadingCloth && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-rose-400/10 to-transparent animate-shimmer" style={{ transform: 'translateX(-100%)', animationDuration: '2s' }} />
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto mb-6 px-1 custom-scrollbar">
-              <div className="grid grid-cols-3 gap-3">
-                {wardrobe.map((item) => (
-                  <div key={item.id} className="relative aspect-[3/4] rounded-xl overflow-hidden bg-white/5 border border-white/10 group shadow-lg">
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute top-1.5 right-1.5">
-                      <span className="badge text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-black/60 text-rose-200 backdrop-blur-md border border-white/10">
-                        {item.category || 'Diğer'}
+              {photoPreview ? (
+                <>
+                  <img
+                    src={photoPreview}
+                    alt="Rabiş"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: analyzingPhoto
+                        ? 'rgba(6, 6, 10, 0.82)'
+                        : 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: analyzingPhoto ? 'center' : 'flex-end',
+                      padding: 14,
+                    }}
+                  >
+                    {analyzingPhoto ? (
+                      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div className="spinner" style={{ width: 32, height: 32, marginBottom: 10 }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-violet-light, #c4b5fd)' }}>
+                          Tarz Analizi Yapılıyor...
+                        </span>
+                      </div>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: '#fff',
+                          background: 'rgba(0,0,0,0.65)',
+                          padding: '4px 10px',
+                          borderRadius: 12,
+                          backdropFilter: 'blur(8px)',
+                        }}
+                      >
+                        📸 Değiştir
                       </span>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                      <p className="text-white text-[10px] truncate font-light tracking-wide">{item.name}</p>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-              {wardrobe.length === 0 && !uploadingCloth && (
-                <div className="h-full flex items-center justify-center text-center px-8">
-                  <p className="text-gray-500/80 font-light text-sm tracking-wide leading-relaxed">
-                    Henüz kıyafet eklemedin.<br/>Dolabını oluşturmak için yukarıdan fotoğraf yükle.
-                  </p>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: 16 }}>
+                  <div style={{ fontSize: 40, marginBottom: 8 }}>📸</div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', display: 'block' }}>
+                    Fotoğrafını Seç
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted, #5c5b6b)', marginTop: 4, display: 'block' }}>
+                    Yüz veya boydan
+                  </span>
                 </div>
               )}
             </div>
 
+            {/* Hidden Native File Input */}
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              capture="user"
+              onChange={handlePhotoSelect}
+              style={{ display: 'none' }}
+            />
+
+            {/* Analysis Results Card */}
+            {analysisResult && (
+              <div
+                className="slide-up"
+                style={{
+                  width: '100%',
+                  background: 'rgba(22, 20, 38, 0.75)',
+                  border: '1px solid rgba(167, 139, 250, 0.20)',
+                  borderRadius: 22,
+                  padding: '18px 20px',
+                  marginBottom: 24,
+                  backdropFilter: 'blur(16px)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <span style={{ fontSize: 16 }}>✨</span>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: 'var(--accent-gold, #d9b478)' }}>
+                    Rabiş'in Stil Analizi
+                  </h4>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                  {analysisResult.hairColor && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '4px 10px',
+                        borderRadius: 10,
+                        background: 'rgba(167, 139, 250, 0.12)',
+                        border: '1px solid rgba(167, 139, 250, 0.25)',
+                        color: 'var(--accent-violet-light, #c4b5fd)',
+                      }}
+                    >
+                      💇‍♀️ {analysisResult.hairColor}
+                    </span>
+                  )}
+                  {analysisResult.skinTone && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '4px 10px',
+                        borderRadius: 10,
+                        background: 'rgba(217, 180, 120, 0.12)',
+                        border: '1px solid rgba(217, 180, 120, 0.25)',
+                        color: 'var(--accent-gold, #d9b478)',
+                      }}
+                    >
+                      ✨ {analysisResult.skinTone}
+                    </span>
+                  )}
+                  {analysisResult.bodyType && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '4px 10px',
+                        borderRadius: 10,
+                        background: 'rgba(52, 211, 153, 0.12)',
+                        border: '1px solid rgba(52, 211, 153, 0.25)',
+                        color: '#34d399',
+                      }}
+                    >
+                      🧍‍♀️ {analysisResult.bodyType}
+                    </span>
+                  )}
+                </div>
+
+                {analysisResult.bestColors && (
+                  <div style={{ marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted, #5c5b6b)', display: 'block', marginBottom: 6 }}>
+                      En Çok Yakışan Renkler:
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {analysisResult.bestColors.map((color, cIdx) => (
+                        <span
+                          key={cIdx}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: '#fff',
+                            padding: '3px 8px',
+                            borderRadius: 8,
+                            background: 'rgba(255, 255, 255, 0.05)',
+                          }}
+                        >
+                          {color}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysisResult.summary && (
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', margin: 0, fontStyle: 'italic', lineHeight: 1.6 }}>
+                    "{analysisResult.summary}"
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Next Button */}
+            <button
+              onClick={() => setStep(2)}
+              disabled={analyzingPhoto}
+              style={{
+                width: '100%',
+                padding: '16px 24px',
+                borderRadius: 18,
+                border: 'none',
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+                color: '#fff',
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 8px 28px rgba(124, 58, 237, 0.4)',
+                transition: 'all 0.25s',
+              }}
+            >
+              {photoPreview ? 'Harika! Dolabıma Geçelim →' : 'Şimdilik Atla ve Dolaba Geç →'}
+            </button>
+          </div>
+        )}
+
+        {/* ═══════════ STEP 2: CLOTHING UPLOAD ═══════════ */}
+        {step === 2 && (
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  color: 'var(--accent-violet-light, #c4b5fd)',
+                  display: 'block',
+                  marginBottom: 8,
+                }}
+              >
+                GARDIROP KURULUMU
+              </span>
+              <h1
+                className="font-editorial"
+                style={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  margin: 0,
+                  background: 'linear-gradient(135deg, #fff 30%, #d9b478 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Rabiş'in Dolabı 👗
+              </h1>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary, #8b8a97)', marginTop: 8, lineHeight: 1.5, maxWidth: 320 }}>
+                Kıyafet, ayakkabı veya takılarının fotoğraflarını çekip at. Yapay zeka bu parçalarla kombin yapacak.
+              </p>
+            </div>
+
+            {/* Upload Area Card */}
+            <div
+              style={{
+                width: '100%',
+                borderRadius: 24,
+                background: 'rgba(22, 20, 38, 0.70)',
+                border: '1px solid rgba(167, 139, 250, 0.15)',
+                padding: '24px 20px',
+                textAlign: 'center',
+                marginBottom: 20,
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div style={{ fontSize: 36, marginBottom: 12 }}>👗👚👟💍</div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 6px', color: '#fff' }}>
+                Kıyafet Fotoğrafı Yükle
+              </h3>
+              <p style={{ fontSize: 12, color: 'var(--text-muted, #5c5b6b)', margin: '0 0 16px', lineHeight: 1.4 }}>
+                Yapay zeka parçaları tek saniyede tanır
+              </p>
+
+              <button
+                onClick={() => clothInputRef.current?.click()}
+                disabled={uploadingCloth}
+                style={{
+                  padding: '13px 24px',
+                  borderRadius: 16,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  boxShadow: '0 6px 20px rgba(124, 58, 237, 0.35)',
+                }}
+              >
+                <span>📸</span>
+                <span>Fotoğraf Çek / Yükle</span>
+              </button>
+
+              <input
+                ref={clothInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleClothUpload}
+                style={{ display: 'none' }}
+              />
+
+              {uploadingCloth && (
+                <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <div className="spinner" style={{ width: 14, height: 14 }} />
+                  <span style={{ fontSize: 12, color: 'var(--accent-violet-light, #c4b5fd)', fontWeight: 600 }}>
+                    Kıyafet analiz ediliyor...
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Wardrobe Grid Display */}
+            <div style={{ width: '100%', marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-violet-light, #c4b5fd)', letterSpacing: 0.5 }}>
+                  EKLENEN PARÇALAR ({wardrobe.length})
+                </span>
+                {addedClothesCount > 0 && (
+                  <span style={{ fontSize: 11, color: '#34d399', fontWeight: 600 }}>
+                    +{addedClothesCount} yeni eklendi
+                  </span>
+                )}
+              </div>
+
+              {wardrobe.length === 0 ? (
+                <div
+                  style={{
+                    padding: '24px 16px',
+                    borderRadius: 18,
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px dashed rgba(255, 255, 255, 0.08)',
+                    textAlign: 'center',
+                    color: 'var(--text-muted, #5c5b6b)',
+                    fontSize: 12,
+                  }}
+                >
+                  Henüz parça eklemedin. İstersen direkt sohbette de ekleyebilirsin!
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 10,
+                    maxHeight: 220,
+                    overflowY: 'auto',
+                    padding: 2,
+                  }}
+                >
+                  {wardrobe.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.025)',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        borderRadius: 16,
+                        padding: 6,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div style={{ width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', marginBottom: 4, background: '#12111e' }}>
+                        <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <p style={{ fontSize: 10, fontWeight: 600, color: '#fff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.name}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Start Chatting Button */}
             <button
               onClick={() => setOnboardingComplete(true)}
-              className="w-full py-4 mt-auto rounded-xl font-medium tracking-wide transition-all duration-300 shadow-lg shadow-purple-500/25 bg-gradient-to-r from-rose-400 via-purple-500 to-indigo-500 text-white hover:shadow-purple-500/40 hover:-translate-y-0.5"
+              style={{
+                width: '100%',
+                padding: '16px 24px',
+                borderRadius: 18,
+                border: 'none',
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #d9b478 100%)',
+                color: '#fff',
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 8px 28px rgba(124, 58, 237, 0.4)',
+                transition: 'all 0.25s',
+              }}
             >
-              🚀 Stilistimle Konuşmaya Başla
+              🚀 Stilistimle Konuşmaya Başla →
             </button>
           </div>
         )}
       </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .font-editorial {
-          font-family: 'Playfair Display', serif;
-        }
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
-        }
-        .animate-shimmer {
-          animation: shimmer infinite;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-      `}} />
     </div>
   )
 }
