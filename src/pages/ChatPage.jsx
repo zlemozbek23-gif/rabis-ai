@@ -596,84 +596,77 @@ export default function ChatPage() {
             <div
               style={{
                 textAlign: 'center',
-                padding: '36px 22px 28px',
-                borderRadius: 28,
+                padding: '20px 18px 16px',
+                borderRadius: 24,
                 background: 'linear-gradient(160deg, rgba(22, 20, 38, 0.6) 0%, rgba(14, 13, 22, 0.4) 100%)',
-                border: '1px solid rgba(167, 139, 250, 0.10)',
-                marginBottom: 24,
+                border: '1px solid rgba(167, 139, 250, 0.12)',
+                marginBottom: 14,
                 position: 'relative',
                 overflow: 'hidden',
               }}
             >
-              {/* Decorative gradient orbs */}
-              <div style={{
-                position: 'absolute', top: -30, left: -30, width: 100, height: 100,
-                borderRadius: '50%', background: 'radial-gradient(circle, rgba(167, 139, 250, 0.10) 0%, transparent 70%)',
-                pointerEvents: 'none',
-              }} />
-              <div style={{
-                position: 'absolute', bottom: -20, right: -20, width: 80, height: 80,
-                borderRadius: '50%', background: 'radial-gradient(circle, rgba(217, 180, 120, 0.08) 0%, transparent 70%)',
-                pointerEvents: 'none',
-              }} />
-
-              <div className="float" style={{ fontSize: 48, marginBottom: 16, position: 'relative' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>
                 ✨
               </div>
 
               <h2 className="font-editorial" style={{
-                fontSize: 24, fontWeight: 700, margin: 0, position: 'relative',
+                fontSize: 20, fontWeight: 700, margin: 0,
                 background: 'linear-gradient(135deg, #fff 20%, #d9b478 80%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
                 Merhaba Rabiş!
               </h2>
               <p style={{
-                fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)',
-                margin: '10px auto 0', maxWidth: 300, lineHeight: 1.6,
-                position: 'relative',
+                fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)',
+                margin: '6px auto 0', maxWidth: 300, lineHeight: 1.5,
               }}>
-                Ben senin kişisel AI stilistinim.
-                <br />
-                <span style={{ color: 'var(--accent-violet-light)', fontWeight: 600 }}>
-                  Bana ne istediğini anlat veya mikrofona konuş
-                </span>
-                , dolabından en güzel kombini seçeyim!
+                Bana ne istediğini yaz, mikrofona konuş veya kıyafet fotoğrafı yükle!
               </p>
             </div>
 
             {/* Quick Prompts */}
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 14 }}>
               <p style={{
                 fontSize: 10, fontWeight: 700, color: 'var(--accent-violet-light)',
-                marginBottom: 10, letterSpacing: 1.5, textTransform: 'uppercase',
+                marginBottom: 8, letterSpacing: 1.5, textTransform: 'uppercase',
               }}>
-                Hızlı Başla
+                Öneri Kombinler
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 8,
+              }}>
                 {QUICK_PROMPTS.map((prompt, i) => (
                   <button
                     key={i}
                     onClick={() => sendMessage(`${prompt.emoji} ${prompt.text}`)}
                     style={{
                       textAlign: 'left',
-                      padding: '14px 18px',
-                      borderRadius: 18,
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      padding: '10px 12px',
+                      borderRadius: 14,
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.07)',
                       color: 'var(--text-primary)',
-                      fontSize: 13,
+                      fontSize: 11,
                       cursor: 'pointer',
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
+                      flexDirection: 'column',
+                      gap: 4,
                       transition: 'all 0.2s',
                       fontWeight: 500,
-                      lineHeight: 1.4,
+                      lineHeight: 1.3,
                     }}
                   >
-                    <span>{prompt.emoji} {prompt.text}</span>
-                    <span style={{ color: 'var(--accent-gold)', fontSize: 14, opacity: 0.5 }}>→</span>
+                    <span style={{ fontSize: 16 }}>{prompt.emoji}</span>
+                    <span style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}>
+                      {prompt.text}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -903,14 +896,15 @@ export default function ChatPage() {
       {/* ═══════ INPUT BAR ═══════ */}
       <div
         style={{
-          padding: '12px 16px calc(14px + var(--safe-bottom))',
-          background: 'rgba(6, 6, 10, 0.80)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+          padding: '12px 16px calc(80px + env(safe-area-inset-bottom, 12px))',
+          background: 'rgba(8, 7, 14, 0.94)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           flexShrink: 0,
           position: 'relative',
-          zIndex: 10,
+          zIndex: 80,
+          boxShadow: '0 -10px 30px rgba(0,0,0,0.5)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
