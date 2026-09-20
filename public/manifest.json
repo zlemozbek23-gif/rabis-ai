@@ -1,0 +1,31 @@
+{
+  "name": "StyleAI — AI Stil Asistanın",
+  "short_name": "StyleAI",
+  "description": "Yapay zeka destekli kişisel stil ve kombin asistanın",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#7c3aed",
+  "lang": "tr",
+  "categories": ["lifestyle", "shopping"],
+  "icons": [
+    {
+      "src": "/icons/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
