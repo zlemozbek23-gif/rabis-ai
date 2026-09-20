@@ -264,7 +264,6 @@ export default function OnboardingPage() {
               ref={photoInputRef}
               type="file"
               accept="image/*"
-              capture="user"
               onChange={handlePhotoSelect}
               style={{ display: 'none' }}
             />
@@ -476,7 +475,6 @@ export default function OnboardingPage() {
                 ref={clothInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleClothUpload}
                 style={{ display: 'none' }}
               />

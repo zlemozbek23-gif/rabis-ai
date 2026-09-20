@@ -937,7 +937,6 @@ export default function ChatPage() {
             ref={photoInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             onChange={handleClothingPhotoUpload}
             style={{ display: 'none' }}
           />
@@ -1055,7 +1054,6 @@ export default function ChatPage() {
                 ref={drawerPhotoInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleClothingPhotoUpload}
                 style={{ display: 'none' }}
               />
